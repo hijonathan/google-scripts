@@ -25,7 +25,6 @@ function processUnresponded() {
   }
 
   Logger.log('Updated ' + numUpdated + ' messages.');
-
 }
 
 function getEmailAddresses() {
@@ -86,30 +85,30 @@ function cleanUp() {
   var label = getLabel(unrespondedLabel),
       iLabel = getLabel(ignoreLabel),
       threads = label.getThreads(),
-      numExpired = 0;
+      numExpired = 0,
+      twoWeeksAgo = new Date();
+
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - maxDays);
 
   if (!threads.length) {
     Logger.log('No threads with that label');
     return;
+  } else {
+    Logger.log('Processing ' + threads.length + ' threads.');
   }
 
   for (i = 0; i < threads.length; i++) {
     var thread = threads[i],
-        lastMessageDate = thread.getLastMessageDate(),
-        twoWeeksFromNow = new Date();
-
-    twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + maxDays);
-
-    // Remove the 'No Response' label from threads we're ignoring.
-    if (threadHasLabel(thread, ignoreLabel)) {
-        label.removeFromThread(thread);
-    }
+        lastMessageDate = thread.getLastMessageDate();
 
     // Remove all labels from expired threads.
-    if (lastMessageDate.getTime() > twoWeeksFromNow.getTime()) {
+    if (lastMessageDate.getTime() < twoWeeksAgo.getTime()) {
       numExpired++;
+      Logger.log('Thread expired');
       label.removeFromThread(thread);
       iLabel.removeFromThread(thread);
+    } else {
+      Logger.log('Thread not expired');
     }
   }
   Logger.log(numExpired + ' unresponded messages expired.');
