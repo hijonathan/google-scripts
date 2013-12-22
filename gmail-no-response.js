@@ -23,16 +23,20 @@ function main() {
 
 function processUnresponded() {
   var threads = GmailApp.search('is:sent from:me -in:chats older_than:' + minDays + 'd newer_than:' + maxDays + 'd'),
-      numUpdated = 0;
+      numUpdated = 0,
+      minDaysAgo = new Date();
+
+  minDaysAgo.setDate(minDaysAgo.getDate() - minDays);
 
   // Filter threads where I was the last respondent.
   for (var i = 0; i < threads.length; i++) {
     var thread = threads[i],
         messages = thread.getMessages(),
         lastMessage = messages[messages.length - 1],
-        lastFrom = lastMessage.getFrom();
+        lastFrom = lastMessage.getFrom(),
+        lastMessageIsOld = lastMessage.getDate().getTime() < minDaysAgo.getTime();
 
-    if (fromMe(lastFrom) && !threadHasLabel(thread, ignoreLabel)) {
+    if (fromMe(lastFrom) && lastMessageIsOld && !threadHasLabel(thread, ignoreLabel)) {
       markUnresponded(thread);
       numUpdated++;
     }
