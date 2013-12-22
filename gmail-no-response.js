@@ -1,5 +1,17 @@
+/*
+ * This script goes through your Gmail Inbox and finds recent emails where you
+ * were the last respondent. It applies a nice label to them, so you can
+ * see them in Priority Inbox or do something else.
+ *
+ * To remove and ignore an email thread, just remove the unrespondedLabel and
+ * apply the ignoreLabel.
+ */
+
+
+// Edit these to your liking.
 var unrespondedLabel = 'No Response',
     ignoreLabel = 'Ignore No Response',
+    minDays = 5,
     maxDays = 14;
 
 function main() {
@@ -8,7 +20,7 @@ function main() {
 }
 
 function processUnresponded() {
-  var threads = GmailApp.search('is:sent from:me -in:chats older_than:5d newer_than:' + maxDays + 'd'),
+  var threads = GmailApp.search('is:sent from:me -in:chats older_than:' + minDays + 'd newer_than:' + maxDays + 'd'),
       numUpdated = 0;
 
   // Filter threads where I was the last respondent.
