@@ -5,6 +5,8 @@
  *
  * To remove and ignore an email thread, just remove the unrespondedLabel and
  * apply the ignoreLabel.
+ *
+ * This is most effective when paired with a time-based script trigger.
  */
 
 
