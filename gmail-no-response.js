@@ -39,7 +39,7 @@ function processUnresponded() {
         lastFrom = lastMessage.getFrom(),
         lastMessageIsOld = lastMessage.getDate().getTime() < minDaysAgo.getTime();
 
-    if (fromMe(lastFrom) && lastMessageIsOld && !threadHasLabel(thread, ignoreLabel)) {
+    if (isFromMe(lastFrom) && lastMessageIsOld && !threadHasLabel(thread, ignoreLabel)) {
       markUnresponded(thread);
       numUpdated++;
     }
@@ -48,15 +48,7 @@ function processUnresponded() {
   Logger.log('Updated ' + numUpdated + ' messages.');
 }
 
-function getEmailAddresses() {
-  var me = Session.getActiveUser().getEmail(),
-      emails = GmailApp.getAliases();
-
-  emails.push(me);
-  return emails;
-}
-
-function fromMe(fromAddress) {
+function isFromMe(fromAddress) {
   var addresses = getEmailAddresses();
   for (i = 0; i < addresses.length; i++) {
     var address = addresses[i],
@@ -68,6 +60,14 @@ function fromMe(fromAddress) {
   }
 
   return false;
+}
+
+function getEmailAddresses() {
+  var me = Session.getActiveUser().getEmail(),
+      emails = GmailApp.getAliases();
+
+  emails.push(me);
+  return emails;
 }
 
 function threadHasLabel(thread, labelName) {
