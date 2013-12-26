@@ -52,7 +52,7 @@ function isFromMe(fromAddress) {
   var addresses = getEmailAddresses();
   for (i = 0; i < addresses.length; i++) {
     var address = addresses[i],
-        r = RegExp(address);
+        r = RegExp(address, 'i');
 
     if (r.test(fromAddress)) {
       return true;
