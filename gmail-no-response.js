@@ -37,9 +37,10 @@ function processUnresponded() {
         messages = thread.getMessages(),
         lastMessage = messages[messages.length - 1],
         lastFrom = lastMessage.getFrom(),
+        lastTo = lastMessage.getTo(),  // I don't want to hear about it when I am sender and receiver
         lastMessageIsOld = lastMessage.getDate().getTime() < minDaysAgo.getTime();
 
-    if (isFromMe(lastFrom) && lastMessageIsOld && !threadHasLabel(thread, ignoreLabel)) {
+    if (isMe(lastFrom) && !isMe(lastTo) && lastMessageIsOld && !threadHasLabel(thread, ignoreLabel)) {
       markUnresponded(thread);
       numUpdated++;
     }
@@ -48,7 +49,7 @@ function processUnresponded() {
   Logger.log('Updated ' + numUpdated + ' messages.');
 }
 
-function isFromMe(fromAddress) {
+function isMe(fromAddress) {
   var addresses = getEmailAddresses();
   for (i = 0; i < addresses.length; i++) {
     var address = addresses[i],
