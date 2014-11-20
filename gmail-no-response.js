@@ -63,11 +63,17 @@ function isFromMe(fromAddress) {
 }
 
 function getEmailAddresses() {
-  var me = Session.getActiveUser().getEmail(),
-      emails = GmailApp.getAliases();
+  // Cache email addresses to cut down on API calls.
+  if (!this.emails) {
+    Logger.log('No cached email addresses. Fetching.');
+    var me = Session.getActiveUser().getEmail(),
+        emails = GmailApp.getAliases();
 
-  emails.push(me);
-  return emails;
+    emails.push(me);
+    this.emails = emails;
+  }
+  Logger.log('Found ' + this.emails.length + ' email addresses that belong to you.');
+  return this.emails;
 }
 
 function threadHasLabel(thread, labelName) {
@@ -90,15 +96,23 @@ function markUnresponded(thread) {
 }
 
 function getLabel(labelName) {
-  var label = GmailApp.getUserLabelByName(labelName);
+  // Cache the labels.
+  this.labels = this.labels || {};
+  label = this.labels[labelName];
 
-  if (label) {
-    Logger.log('Label exists.');
-  } else {
-    Logger.log('Label does not exist. Creating it.');
-    label = GmailApp.createLabel(labelName);
+  if (!label) {
+    Logger.log('Could not find cached label "' + labelName + '". Fetching.', this.labels);
+
+    var label = GmailApp.getUserLabelByName(labelName);
+
+    if (label) {
+      Logger.log('Label exists.');
+    } else {
+      Logger.log('Label does not exist. Creating it.');
+      label = GmailApp.createLabel(labelName);
+    }
+    this.labels[labelName] = label;
   }
-
   return label;
 }
 
