@@ -16,37 +16,66 @@
 // Edit these to your liking.
 var unrespondedLabel = 'No Response',
     ignoreLabel = 'Ignore No Response',
-    minDays = 5,
-    maxDays = 14;
+    minTime = '5d',   // 5 days
+    maxTime = '14d';  // 14 days
+
+// Mapping of Gmail search time units to milliseconds.
+var UNIT_MAPPING = {
+    h: 36e5,    // Hours
+    d: 864e5,   // Days
+    w: 6048e5,  // Weeks
+    m: 263e7,   // Months
+    y: 3156e7   // Years
+};
 
 function main() {
+  Logger.log('Start.');
   processUnresponded();
+  Logger.log('Finished processing.');
   cleanUp();
+  Logger.log('Finished all.');
 }
 
 function processUnresponded() {
-  var threads = GmailApp.search('is:sent from:me -in:chats older_than:' + minDays + 'd newer_than:' + maxDays + 'd'),
-      numUpdated = 0,
-      minDaysAgo = new Date();
+  var threads = GmailApp.search('is:sent from:me -in:chats older_than:' + minTime + ' newer_than:' + maxTime),
+      threadMessages = GmailApp.getMessagesForThreads(threads),
+      unrespondedThreads = [],
+      minTimeAgo = new Date();
 
-  minDaysAgo.setDate(minDaysAgo.getDate() - minDays);
+  Logger.log('now: ' + minTimeAgo.toString());
+  minTimeAgo.setTime(subtract(minTimeAgo, minTime));
+  Logger.log('minTimeAgo: ' + minTimeAgo.toString());
+
+  Logger.log('Processing ' + threads.length + ' threads.');
 
   // Filter threads where I was the last respondent.
-  for (var i = 0; i < threads.length; i++) {
+  threadMessages.forEach(function(messages, i) {
     var thread = threads[i],
-        messages = thread.getMessages(),
         lastMessage = messages[messages.length - 1],
         lastFrom = lastMessage.getFrom(),
         lastTo = lastMessage.getTo(),  // I don't want to hear about it when I am sender and receiver
-        lastMessageIsOld = lastMessage.getDate().getTime() < minDaysAgo.getTime();
+        lastMessageIsOld = lastMessage.getDate().getTime() < minTimeAgo.getTime();
 
     if (isMe(lastFrom) && !isMe(lastTo) && lastMessageIsOld && !threadHasLabel(thread, ignoreLabel)) {
-      markUnresponded(thread);
-      numUpdated++;
+      unrespondedThreads.push(thread);
     }
-  }
+  })
 
-  Logger.log('Updated ' + numUpdated + ' messages.');
+  // Mark unresponded in bulk.
+  markUnresponded(unrespondedThreads);
+  Logger.log('Updated ' + unrespondedThreads.length + ' messages.');
+}
+
+function subtract(date, timeStr) {
+  // Takes a date object and subtracts a Gmail-style time string (e.g. '5d').
+  // Returns a new date object.
+  var re = /^([0-9]+)([a-zA-Z]+)$/,
+      parts = re.exec(timeStr),
+      val = parts && parts[1],
+      unit = parts && parts[2],
+      ms = UNIT_MAPPING[unit];
+
+  return date.getTime() - (val * ms);
 }
 
 function isMe(fromAddress) {
@@ -72,8 +101,8 @@ function getEmailAddresses() {
 
     emails.push(me);
     this.emails = emails;
+    Logger.log('Found ' + this.emails.length + ' email addresses that belong to you.');
   }
-  Logger.log('Found ' + this.emails.length + ' email addresses that belong to you.');
   return this.emails;
 }
 
@@ -91,9 +120,9 @@ function threadHasLabel(thread, labelName) {
   return false;
 }
 
-function markUnresponded(thread) {
+function markUnresponded(threads) {
   var label = getLabel(unrespondedLabel);
-  label.addToThread(thread);
+  label.addToThreads(threads);
 }
 
 function getLabel(labelName) {
@@ -121,10 +150,10 @@ function cleanUp() {
   var label = getLabel(unrespondedLabel),
       iLabel = getLabel(ignoreLabel),
       threads = label.getThreads(),
-      numExpired = 0,
+      expiredThreads = [],
       twoWeeksAgo = new Date();
 
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - maxDays);
+  twoWeeksAgo.setTime(subtract(twoWeeksAgo, maxTime));
 
   if (!threads.length) {
     Logger.log('No threads with that label');
@@ -133,19 +162,19 @@ function cleanUp() {
     Logger.log('Processing ' + threads.length + ' threads.');
   }
 
-  for (i = 0; i < threads.length; i++) {
-    var thread = threads[i],
-        lastMessageDate = thread.getLastMessageDate();
+  threads.forEach(function(thread) {
+    var lastMessageDate = thread.getLastMessageDate();
 
     // Remove all labels from expired threads.
     if (lastMessageDate.getTime() < twoWeeksAgo.getTime()) {
-      numExpired++;
       Logger.log('Thread expired');
-      label.removeFromThread(thread);
-      iLabel.removeFromThread(thread);
+      expiredThreads.push(thread);
     } else {
       Logger.log('Thread not expired');
     }
-  }
-  Logger.log(numExpired + ' unresponded messages expired.');
+  });
+
+  label.removeFromThreads(expiredThreads);
+  iLabel.removeFromThreads(expiredThreads);
+  Logger.log(expiredThreads.length + ' unresponded messages expired.');
 }
