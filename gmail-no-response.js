@@ -146,9 +146,9 @@ function cleanUp() {
       iLabel = getLabel(ignoreLabel),
       threads = label.getThreads(),
       expiredThreads = [],
-      twoWeeksAgo = new Date();
+      expiredDate = new Date();
 
-  twoWeeksAgo.setTime(subtract(twoWeeksAgo, maxTime));
+  expiredDate.setTime(subtract(expiredDate, maxTime));
 
   if (!threads.length) {
     Logger.log('No threads with that label');
@@ -161,7 +161,7 @@ function cleanUp() {
     var lastMessageDate = thread.getLastMessageDate();
 
     // Remove all labels from expired threads.
-    if (lastMessageDate.getTime() < twoWeeksAgo.getTime()) {
+    if (lastMessageDate.getTime() < expiredDate.getTime()) {
       Logger.log('Thread expired');
       expiredThreads.push(thread);
     } else {
