@@ -29,11 +29,8 @@ var UNIT_MAPPING = {
 };
 
 function main() {
-  Logger.log('Start.');
   processUnresponded();
-  Logger.log('Finished processing.');
   cleanUp();
-  Logger.log('Finished all.');
 }
 
 function processUnresponded() {
@@ -42,9 +39,7 @@ function processUnresponded() {
       unrespondedThreads = [],
       minTimeAgo = new Date();
 
-  Logger.log('now: ' + minTimeAgo.toString());
   minTimeAgo.setTime(subtract(minTimeAgo, minTime));
-  Logger.log('minTimeAgo: ' + minTimeAgo.toString());
 
   Logger.log('Processing ' + threads.length + ' threads.');
 
