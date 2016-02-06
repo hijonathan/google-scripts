@@ -28,6 +28,8 @@ var UNIT_MAPPING = {
     y: 3156e7   // Years
 };
 
+var ADD_LABEL_TO_THREAD_LIMIT = 100;
+
 function main() {
   processUnresponded();
   cleanUp();
@@ -117,7 +119,15 @@ function threadHasLabel(thread, labelName) {
 
 function markUnresponded(threads) {
   var label = getLabel(unrespondedLabel);
-  label.addToThreads(threads);
+  
+  // addToThreads has a limit of 100 threads. Use batching.
+  if (threads.length > ADD_LABEL_TO_THREAD_LIMIT) {
+    for (var i = 0; i < Math.ceil(threads.length / ADD_LABEL_TO_THREAD_LIMIT); i++) {
+        label.addToThreads(threads.slice(100 * i, 100 * (i + 1)));
+    }
+  } else {
+      label.addToThreads(threads);
+  }
 }
 
 function getLabel(labelName) {
